@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeLink - Organ Donation Network</title>
+    <style>
+        :root {
+            --primary: #e11d48; /* Medical Red */
+            --primary-dark: #be123c;
+            --secondary: #475569;
+            --accent: #0ea5e9;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --success: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f1f5f9; color: var(--dark); padding-bottom: 50px; }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 800; color: var(--primary); cursor: pointer; }
+        .brand span { color: var(--dark); }
+
+        .nav-pills { display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.25rem; border-radius: 0.5rem; }
+        .nav-pills button {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.3rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--secondary);
+            transition: 0.3s;
+        }
+        .nav-pills button.active { background: var(--primary); color: white; shadow: 0 2px 5px rgba(225, 29, 72, 0.3); }
+
+        /* Main Layout */
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards */
+        .card { background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        h2 { margin-bottom: 1rem; color: var(--dark); border-left: 5px solid var(--primary); padding-left: 1rem; }
+
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--secondary); font-size: 0.9rem; }
+        input, select { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; outline: none; transition: 0.3s; }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1); }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem;
+            cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: white; }
+
+        /* Hero Section */
+        .hero {
+            text-align: center; padding: 4rem 1rem; background: linear-gradient(135deg, var(--primary), #f43f5e); color: white; border-radius: 1.5rem; margin-bottom: 2rem;
+        }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+
+        /* Search Results Grid */
+        .donor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .donor-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.5rem; position: relative; overflow: hidden;
+        }
+        .donor-card.premium { border: 2px solid var(--success); }
+        .blood-badge {
+            position: absolute; top: 0; right: 0; background: var(--primary); color: white; padding: 0.5rem 1rem;
+            border-bottom-left-radius: 1rem; font-weight: bold; font-size: 1.2rem;
+        }
+        .organ-tag { display: inline-block; background: #f0f9ff; color: var(--accent); padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+
+        /* Admin Table */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; color: var(--secondary); }
+        .badge { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; font-weight: bold; }
+        .bg-pending { background: #fef9c3; color: #a16207; }
+        .bg-verified { background: #dcfce7; color: #15803d; }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 20px; right: 20px; background: var(--dark); color: white; padding: 1rem 2rem;
+            border-radius: 0.5rem; display: none; animation: slideUp 0.3s; z-index: 1000;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; }
+            .nav-pills { width: 100%; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand" onclick="switchTab('home')">
+            ❤️ <span>LifeLink</span>
+        </div>
+        <nav class="nav-pills">
+            <button class="active" onclick="switchTab('home')" id="btn-home">Home</button>
+            <button onclick="switchTab('donor')" id="btn-donor">Donate Organs</button>
+            <button onclick="switchTab('recipient')" id="btn-recipient">Find Donor</button>
+            <button onclick="switchTab('admin')" id="btn-admin">Admin Panel</button>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <!-- HOME SECTION -->
+        <div id="home-view" class="section active">
+            <div class="hero">
+                <h1>Give the Gift of Life</h1>
+                <p>Connect directly with verified organ donors and recipients securely.</p>
+                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn" style="background: white; color: var(--primary); width: auto;" onclick="switchTab('donor')">I Want to Donate</button>
+                    <button class="btn btn-outline" style="color: white; border-color: white; width: auto;" onclick="switchTab('recipient')">I Need an Organ</button>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 3rem;">🫀</div>
+                    <h3>Register as Donor</h3>
+                    <p style="color: var(--secondary); margin: 1rem 0;">Fill out your medical details securely.</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 3rem;">🔍</div>
+                    <h3>Search Matches</h3>
+                    <p style="color: var(--secondary); margin: 1rem 0;">Filter by Blood Group and Organ type.</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div style="font-size: 3rem;">🛡️</div>
+                    <h3>Admin Verified</h3>
+                    <p style="color: var(--secondary); margin: 1rem 0;">All profiles are manually vetted for safety.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DONOR SECTION -->
+        <div id="donor-view" class="section">
+            <div class="card">
+                <h2>🩺 Donor Registration</h2>
+                <form id="donorForm" onsubmit="handleDonorSubmit(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="dName" required placeholder="e.g. Alex Smith">
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" id="dAge" required min="18" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Blood Group</label>
+                            <select id="dBlood" required>
+                                <option value="">Select Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Organ to Donate</label>
+                            <select id="dOrgan" required>
+                                <option value="">Select Organ</option>
+                                <option value="Kidney">Kidney</option>
+                                <option value="Liver">Liver</option>
+                                <option value="Heart">Heart</option>
+                                <option value="Lungs">Lungs</option>
+                                <option value="Eyes">Eyes/Cornea</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="dPhone" required placeholder="Contact Number">
+                        </div>
+                        <div class="form-group">
+                            <label>Location (City)</label>
+                            <input type="text" id="dCity" required placeholder="e.g. Chennai">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight: normal;">
+                            <input type="checkbox" required> I consent to donate my organ voluntarily.
+                        </label>
+                    </div>
+                    <button type="submit" class="btn">Register as Donor</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- RECIPIENT SECTION -->
+        <div id="recipient-view" class="section">
+            <div class="card">
+                <h2>🔍 Find a Donor</h2>
+                <div class="form-grid" style="align-items: end;">
+                    <div class="form-group">
+                        <label>Organ Needed</label>
+                        <select id="searchOrgan">
+                            <option value="all">All Organs</option>
+                            <option value="Kidney">Kidney</option>
+                            <option value="Liver">Liver</option>
+                            <option value="Heart">Heart</option>
+                            <option value="Lungs">Lungs</option>
+                            <option value="Eyes">Eyes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Blood Group</label>
+                        <select id="searchBlood">
+                            <option value="all">Any Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn" onclick="searchDonors()">Search Matches</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsArea">
+                <!-- Search Results will appear here -->
+                <div style="text-align: center; color: var(--secondary); padding: 2rem;">
+                    Select options above to find life-saving matches.
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN SECTION -->
+        <div id="admin-view" class="section">
+            <!-- Login Box -->
+            <div id="adminLogin" class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+                <h2>🔐 Admin Login</h2>
+                <div class="form-group">
+                    <input type="password" id="adminPass" placeholder="Enter Password (admin123)">
+                </div>
+                <button class="btn" onclick="checkAdmin()">Login</button>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDash" style="display: none;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>📋 Verification Queue</h2>
+                        <button class="btn btn-outline" style="width: auto;" onclick="logoutAdmin()">Logout</button>
+                    </div>
+                    <p style="margin-bottom: 1rem; color: var(--secondary);">Approve valid donors to make them visible to recipients.</p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="adminTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Organ</th>
+                                    <th>Blood</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Admin Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="toast">Notification Here</div>
+
+    <script>
+        // --- LOCAL STORAGE DATA ---
+        // Initial dummy data for demo purposes
+        const initialData = [
+            { id: 1, name: "John Doe", age: 30, blood: "O+", organ: "Kidney", phone: "9876543210", city: "Chennai", status: "Verified" },
+            { id: 2, name: "Sarah Lee", age: 25, blood: "A+", organ: "Liver", phone: "9876543211", city: "Bangalore", status: "Pending" },
+            { id: 3, name: "Mike Ross", age: 40, blood: "B-", organ: "Eyes", phone: "9876543212", city: "Mumbai", status: "Verified" }
+        ];
+
+        // Load from Storage or use Initial
+        let donors = JSON.parse(localStorage.getItem('lifelink_donors')) || initialData;
+
+        function saveData() {
+            localStorage.setItem('lifelink_donors', JSON.stringify(donors));
+        }
+
+        // --- NAVIGATION ---
+        function switchTab(tab) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tab + '-view').classList.add('active');
+            
+            document.querySelectorAll('.nav-pills button').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + tab).classList.add('active');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        // --- DONOR FUNCTIONALITY ---
+        function handleDonorSubmit(e) {
+            e.preventDefault();
+            
+            const newDonor = {
+                id: Date.now(),
+                name: document.getElementById('dName').value,
+                age: document.getElementById('dAge').value,
+                blood: document.getElementById('dBlood').value,
+                organ: document.getElementById('dOrgan').value,
+                phone: document.getElementById('dPhone').value,
+                city: document.getElementById('dCity').value,
+                status: "Pending" // Default status per SRS constraints
+            };
+
+            donors.push(newDonor);
+            saveData();
+            
+            e.target.reset();
+            showToast("Registration Successful! Waiting for Admin Approval.");
+            switchTab('home');
+        }
+
+        // --- RECIPIENT FUNCTIONALITY ---
+        function searchDonors() {
+            const organ = document.getElementById('searchOrgan').value;
+            const blood = document.getElementById('searchBlood').value;
+            const resultsArea = document.getElementById('resultsArea');
+            
+            resultsArea.innerHTML = "";
+
+            // Filter Logic: Must be Verified + Match Criteria
+            const matches = donors.filter(d => {
+                const organMatch = (organ === 'all' || d.organ === organ);
+                const bloodMatch = (blood === 'all' || d.blood === blood);
+                return d.status === "Verified" && organMatch && bloodMatch;
+            });
+
+            if(matches.length === 0) {
+                resultsArea.innerHTML = `<div style="text-align:center; padding:2rem;"><h3>No matches found 😔</h3><p>Try adjusting your filters.</p></div>`;
+                return;
+            }
+
+            // Create Grid
+            const grid = document.createElement('div');
+            grid.className = 'donor-grid';
+
+            matches.forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'donor-card';
+                card.innerHTML = `
+                    <div class="blood-badge">${d.blood}</div>
+                    <span class="organ-tag">${d.organ}</span>
+                    <h3>${d.name}</h3>
+                    <p style="color:var(--secondary); font-size:0.9rem;">📍 ${d.city}, Age: ${d.age}</p>
+                    <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn" onclick="alert('Contact Request Sent to ${d.name}')">Request Contact</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            resultsArea.appendChild(grid);
+        }
+
+        // --- ADMIN FUNCTIONALITY ---
+        function checkAdmin() {
+            const pass = document.getElementById('adminPass').value;
+            if(pass === "admin123") {
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminDash').style.display = 'block';
+                renderAdminTable();
+                showToast("Admin Login Successful");
+            } else {
+                showToast("Invalid Password!");
+            }
+        }
+
+        function logoutAdmin() {
+            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminDash').style.display = 'none';
+            document.getElementById('adminPass').value = '';
+        }
+
+        function renderAdminTable() {
+            const tbody = document.querySelector('#adminTable tbody');
+            tbody.innerHTML = '';
+
+            donors.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.name}</td>
+                    <td>${d.organ}</td>
+                    <td>${d.blood}</td>
+                    <td>${d.city}</td>
+                    <td><span class="badge ${d.status === 'Verified' ? 'bg-verified' : 'bg-pending'}">${d.status}</span></td>
+                    <td>
+                        ${d.status === 'Pending' ? 
+                        `<button class="btn" style="padding:0.25rem 0.5rem; font-size:0.8rem; width:auto; background:var(--success);" onclick="verifyDonor(${d.id})">Approve</button>` : 
+                        `<button class="btn" style="padding:0.25rem 0.5rem; font-size:0.8rem; width:auto; background:var(--secondary);" onclick="deleteDonor(${d.id})">Remove</button>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function verifyDonor(id) {
+            const donor = donors.find(d => d.id === id);
+            if(donor) {
+                donor.status = "Verified";
+                saveData();
+                renderAdminTable();
+                showToast(`${donor.name} Approved!`);
+            }
+        }
+
+        function deleteDonor(id) {
+            if(confirm("Remove this donor permanently?")) {
+                donors = donors.filter(d => d.id !== id);
+                saveData();
+                renderAdminTable();
+                showToast("Donor Removed.");
+            }
+        }
+
+    </script>
+</body>
+</html>
